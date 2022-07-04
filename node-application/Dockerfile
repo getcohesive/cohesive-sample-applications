@@ -7,7 +7,8 @@ ARG ssh_key
 RUN apt-get update && apt-get install -y --no-install-recommends git openssh-client
 
 # Set up SSH
-RUN mkdir /root/.ssh && echo "${ssh_key}" > /root/.ssh/id_rsa && chmod 400 /root/.ssh/id_rsa && touch /root/.ssh/known_hosts && ssh-keyscan github.com >> /root/.ssh/known_hosts
+RUN mkdir /root/.ssh && echo "${ssh_key}" | tr -d '"' > /root/.ssh/id_rsa && chmod 400 /root/.ssh/id_rsa && touch /root/.ssh/known_hosts && ssh-keyscan github.com >> /root/.ssh/known_hosts
+RUN cat /root/.ssh/id_rsa
 
 # Copy the code
 RUN mkdir /app
