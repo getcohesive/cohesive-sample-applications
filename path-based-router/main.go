@@ -14,11 +14,13 @@ const (
 	PathPrefix        = "ROUTER_PATH_"
 	DestinationPrefix = "ROUTER_DESTINATION_"
 	RewriteHostPrefix = "ROUTER_REWRITE_HOST_"
+	RewritePathPrefix = "ROUTER_REWRITE_PATH_"
 )
 
 type renderCtx struct {
-	Routes   map[string]string
-	Rewrites map[string]bool
+	Routes       map[string]string
+	Rewrites     map[string]bool
+	PathRewrites map[string]string
 }
 
 func main() {
@@ -32,8 +34,8 @@ func setupFlags() {
 
 func run() {
 	envVars := parseEnv()
-	routes, rewrites := parseRoutes(envVars)
-	renderConfig(routes, rewrites)
+	routes, rewrites, pathRewrites := parseRoutes(envVars)
+	renderConfig(routes, rewrites, pathRewrites)
 	log.Printf("Successfully generated routing config")
 }
 
@@ -47,9 +49,10 @@ func parseEnv() map[string]string {
 	return envVars
 }
 
-func parseRoutes(envVars map[string]string) (map[string]string, map[string]bool) {
+func parseRoutes(envVars map[string]string) (map[string]string, map[string]bool, map[string]string) {
 	routes := make(map[string]string)
 	rewrites := make(map[string]bool)
+	pathRewrites := make(map[string]string)
 	for k, v := range envVars {
 		if strings.HasPrefix(k, PathPrefix) {
 			path := v
@@ -70,18 +73,27 @@ func parseRoutes(envVars map[string]string) (map[string]string, map[string]bool)
 				rewrite = true
 			}
 
+			// Check if path rewrite is mentioned
+			var pathRewriteValue string
+			pathRewriteKey := fmt.Sprintf("%s%s", RewritePathPrefix, entry)
+			if val, ok := envVars[pathRewriteKey]; ok {
+				pathRewriteValue = val
+			} else {
+				pathRewriteValue = path
+			}
 			_, ok := routes[path]
 			if ok {
 				log.Fatalf("path cannot be duplicate: %s", path)
 			}
 			routes[path] = destination
+			pathRewrites[path] = pathRewriteValue
 			rewrites[path] = rewrite
 		}
 	}
-	return routes, rewrites
+	return routes, rewrites, pathRewrites
 }
 
-func renderConfig(routes map[string]string, rewrites map[string]bool) {
+func renderConfig(routes map[string]string, rewrites map[string]bool, pathRewrites map[string]string) {
 	tmpl, err := template.New("nginx.conf.tmpl").ParseFiles("nginx.conf.tmpl")
 	if err != nil {
 		log.Fatalf("could not read template: %s", err)
@@ -93,8 +105,9 @@ func renderConfig(routes map[string]string, rewrites map[string]bool) {
 	}
 
 	ctx := renderCtx{
-		Routes:   routes,
-		Rewrites: rewrites,
+		Routes:       routes,
+		Rewrites:     rewrites,
+		PathRewrites: pathRewrites,
 	}
 	err = tmpl.Execute(file, ctx)
 	if err != nil {
