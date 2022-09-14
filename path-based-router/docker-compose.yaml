@@ -5,7 +5,8 @@ services:
     environment:
       ROUTER_PATH_BACKEND: /service1
       ROUTER_DESTINATION_BACKEND: https://www.google.com
-      ROUTER_REWRITE_PATH_BACKEND: /search
+      ROUTER_REWRITE_PATH_BACKEND: /
+      ROUTER_REWRITE_HOST_BACKEND: true
       ROUTER_PATH_FRONTEND: /service2
       ROUTER_DESTINATION_FRONTEND: https://facebook.com
       ROUTER_REWRITE_PATH_FRONTEND: /

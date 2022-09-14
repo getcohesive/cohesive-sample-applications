@@ -43,12 +43,10 @@ http {
 {{ if not (index $.Rewrites $k) }}
               proxy_set_header Host $http_host;
 {{ end }}
-              set $backend_servers {{$v}};
-              rewrite ^{{$k}}.*$ {{$v}}{{ index $.PathRewrites $k }}$1;
               proxy_http_version      1.1;
               proxy_set_header        Upgrade         $http_upgrade;
               proxy_set_header        Connection      $connection_upgrade;
-              proxy_pass $backend_servers;
+              proxy_pass {{$v}}{{ index $.PathRewrites $k }};
             }
 {{- end }}
     }
